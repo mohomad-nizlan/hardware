@@ -25,14 +25,14 @@ export async function POST(req:NextRequest){
   const b=await req.json();
   if(!Array.isArray(b.items)||b.items.length<1||b.items.length>100)return fail("Add between 1 and 100 distinct items.");
   if(!["cash","card","bank"].includes(b.paymentMethod))return fail("Invalid payment method.");
-  const items=b.items.map((it:unknown)=>{
-   const x=it as {productId:unknown;quantity:unknown};
-   if(typeof x.productId!=="string"||x.productId.length>100)throw new Error("Invalid product.");
-   const qtyMilli=toMilli(x.quantity);
-   if(qtyMilli<=0)throw new Error("Quantity must be greater than zero.");
-   return {productId:x.productId,qtyMilli};
+  const items: { productId: string; qtyMilli: number }[] = b.items.map((it: unknown) => {
+    const x = it as { productId: unknown; quantity: unknown };
+    if (typeof x.productId !== "string" || x.productId.length > 100) throw new Error("Invalid product.");
+    const qtyMilli = toMilli(x.quantity);
+    if (qtyMilli <= 0) throw new Error("Quantity must be greater than zero.");
+    return { productId: x.productId, qtyMilli };
   });
-  if(new Set(items.map(x=>x.productId)).size!==items.length)return fail("Duplicate items must be combined before checkout.");
+  if (new Set(items.map((x) => x.productId)).size !== items.length) return fail("Duplicate items must be combined before checkout.");
   const shop=await getShop(); const tx=await client.transaction("write");
   let saleId="",invoiceNo="";
   try{
