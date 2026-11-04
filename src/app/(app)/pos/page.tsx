@@ -3,7 +3,8 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {
   ScanBarcode,Search,Plus,Minus,ShoppingCart,Trash2,CreditCard,Banknote,Landmark,
-  ReceiptText,CheckCircle2,Printer,ArrowLeft,PackageX,Keyboard,RotateCcw,Check,X
+  ReceiptText,CheckCircle2,Printer,ArrowLeft,PackageX,Keyboard,RotateCcw,Check,X,
+  ChevronDown,ChevronUp
 } from "lucide-react";
 import {api,jsonBody} from "@/lib/client";
 import {money,quantity} from "@/lib/format";
@@ -16,6 +17,7 @@ export default function Pos(){
   const [query,setQuery]=useState(""),[products,setProducts]=useState<Product[]>([]),[cart,setCart]=useState<CartItem[]>([]),[searching,setSearching]=useState(false);
   const [method,setMethod]=useState("cash"),[discount,setDiscount]=useState("0"),[tender,setTender]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState<{id:string;invoiceNo:string}|null>(null);
   const [selectedCat,setSelectedCat]=useState("All");
+  const [expandedItems,setExpandedItems]=useState(false);
   const scanInput=useRef<HTMLInputElement>(null);
   const cartItemsRef=useRef<HTMLDivElement>(null);
 
@@ -95,6 +97,7 @@ export default function Pos(){
     setDiscount("0");
     setTender("");
     setError("");
+    setExpandedItems(false);
     scanInput.current?.focus();
   };
 
@@ -267,12 +270,12 @@ export default function Pos(){
         <div className="card card-pad cart-panel">
           <div className="card-titlebar" style={{marginBottom:10,flexShrink:0}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              {/* Cart icon with bubble count */}
+              {/* Cart icon with distinct product count badge */}
               <div className="cart-icon-wrap">
                 <ShoppingCart size={19} strokeWidth={2.2}/>
                 {cart.length>0&&(
                   <span className="cart-bubble">
-                    {cart.reduce((sum,x)=>sum+x.qty,0)}
+                    {cart.length}
                   </span>
                 )}
               </div>
@@ -281,7 +284,19 @@ export default function Pos(){
                 <p className="hint" style={{margin:"2px 0 0"}}>Live customer checkout</p>
               </div>
             </div>
-            <div style={{display:"flex",gap:7,alignItems:"center"}}>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              {cart.length>2&&(
+                <button
+                  type="button"
+                  className="btn btn-small btn-outline"
+                  style={{padding:"3px 8px",fontSize:11,gap:3,minHeight:28}}
+                  onClick={()=>setExpandedItems(!expandedItems)}
+                  title={expandedItems?"Collapse item list":"Expand to see all added products"}
+                >
+                  {expandedItems?<ChevronUp size={13}/>:<ChevronDown size={13}/>}
+                  {expandedItems?"Collapse":"Expand"}
+                </button>
+              )}
               {cart.length>0&&(
                 <button
                   type="button"
@@ -297,7 +312,7 @@ export default function Pos(){
           </div>
 
           {/* Scrollable list of items in bill - sleek, compact, prominent */}
-          <div className="cart-items" ref={cartItemsRef}>
+          <div className={`cart-items ${expandedItems?"is-expanded":""}`} ref={cartItemsRef}>
             {cart.length?cart.map(x=>(
               <div className="cart-item-row" key={x.product.id}>
                 <div className="cart-item-info">
@@ -343,6 +358,18 @@ export default function Pos(){
               </div>
             )}
           </div>
+
+          {/* Below expand toggle so user can see all products added */}
+          {cart.length>2&&(
+            <button
+              type="button"
+              className={`cart-expand-toggle ${expandedItems?"expanded":""}`}
+              onClick={()=>setExpandedItems(!expandedItems)}
+              aria-label={expandedItems?"Collapse item list":"Expand to see all added products"}
+            >
+              <span>{expandedItems?"▴ Collapse list / Show payment controls":`▾ View all ${cart.length} products added (Expand)`}</span>
+            </button>
+          )}
 
           {/* Sticky/Pinned Checkout Footer - Compact and efficient */}
           <div className="cart-footer">
