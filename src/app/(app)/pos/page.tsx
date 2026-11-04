@@ -3,7 +3,7 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {
   ScanBarcode,Search,Plus,Minus,ShoppingCart,Trash2,CreditCard,Banknote,Landmark,
-  ReceiptText,CheckCircle2,Printer,ArrowLeft,PackageX,Keyboard,RotateCcw,Check,List,LayoutGrid,X
+  ReceiptText,CheckCircle2,Printer,ArrowLeft,PackageX,Keyboard,RotateCcw,Check,X
 } from "lucide-react";
 import {api,jsonBody} from "@/lib/client";
 import {money,quantity} from "@/lib/format";
@@ -16,15 +16,7 @@ export default function Pos(){
   const [query,setQuery]=useState(""),[products,setProducts]=useState<Product[]>([]),[cart,setCart]=useState<CartItem[]>([]),[searching,setSearching]=useState(false);
   const [method,setMethod]=useState("cash"),[discount,setDiscount]=useState("0"),[tender,setTender]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState<{id:string;invoiceNo:string}|null>(null);
   const [selectedCat,setSelectedCat]=useState("All");
-  const [view,setView]=useState<"rows"|"grid">("rows");
   const scanInput=useRef<HTMLInputElement>(null);
-
-  // Default to row view on tablet screens (<= 1024px) for better touch ergonomics
-  useEffect(()=>{
-    if(typeof window!=="undefined"&&window.innerWidth<=1024){
-      setView("rows");
-    }
-  },[]);
 
   useEffect(()=>{
     const timer=setTimeout(()=>{
@@ -160,30 +152,7 @@ export default function Pos(){
                 <h2 className="section-title">Product catalog</h2>
                 <p className="hint" style={{margin:"3px 0 0"}}>Select an item to add to the current bill.</p>
               </div>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                {/* View toggle: Rows vs Grid */}
-                <div className="view-toggle">
-                  <button
-                    type="button"
-                    className={`view-btn ${view==="rows"?"active":""}`}
-                    onClick={()=>setView("rows")}
-                    title="Row / List view"
-                    aria-label="Row view"
-                  >
-                    <List size={14}/>
-                  </button>
-                  <button
-                    type="button"
-                    className={`view-btn ${view==="grid"?"active":""}`}
-                    onClick={()=>setView("grid")}
-                    title="Grid view"
-                    aria-label="Grid view"
-                  >
-                    <LayoutGrid size={14}/>
-                  </button>
-                </div>
-                <span className="badge">{filteredProducts.length} shown</span>
-              </div>
+              <span className="badge">{filteredProducts.length} items</span>
             </div>
 
             {/* Search Input */}
@@ -228,11 +197,11 @@ export default function Pos(){
             )}
           </div>
 
-          {/* Scrollable Product Area */}
+          {/* Scrollable Product Area - always row view */}
           <div className="pos-products-scroll">
-            {searching?<Loading/>:view==="rows"?(
-              <div className="pos-products rows">
-                {filteredProducts.slice(0,80).map(p=>{
+            {searching?<Loading/>:(
+              <div className="pos-products-list">
+                {filteredProducts.slice(0,100).map(p=>{
                   const inCartQty=cartQtyMap[p.id]||0;
                   return (
                     <button
@@ -241,6 +210,13 @@ export default function Pos(){
                       disabled={p.stock_milli<=0}
                       onClick={()=>add(p)}
                     >
+                      {/* Green circle badge on top right - never expands the row */}
+                      {inCartQty>0&&(
+                        <span className="row-cart-count">
+                          {quantity(inCartQty*1000)}
+                        </span>
+                      )}
+
                       <div className="row-main">
                         <div className="row-title-line">
                           <span className="code" style={{padding:"2px 6px",fontSize:11}}>{p.code}</span>
@@ -261,49 +237,9 @@ export default function Pos(){
                           <div style={{fontWeight:400,color:"#8a8f9b",fontSize:10}}>per {p.unit}</div>
                         </div>
 
-                        {inCartQty>0&&(
-                          <span className="in-cart-pill">
-                            <Check size={11} strokeWidth={3}/>
-                            {quantity(inCartQty*1000)} in bill
-                          </span>
-                        )}
-
                         <div className={`product-plus ${inCartQty>0?"plus-green":""}`}>
                           {p.stock_milli<=0?<PackageX size={15}/>:<Plus size={16}/>}
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ):(
-              <div className="pos-products">
-                {filteredProducts.slice(0,80).map(p=>{
-                  const inCartQty=cartQtyMap[p.id]||0;
-                  return (
-                    <button
-                      key={p.id}
-                      className={`pos-product ${inCartQty>0?"in-cart":""}`}
-                      disabled={p.stock_milli<=0}
-                      onClick={()=>add(p)}
-                    >
-                      <div style={{flex:1,minWidth:0}}>
-                        <h3>{p.name}</h3>
-                        <p>
-                          <span className="code" style={{padding:"3px 6px"}}>{p.code}</span> · {quantity(p.stock_milli)} {p.unit} left
-                        </p>
-                        {inCartQty>0&&(
-                          <div style={{marginBottom:8}}>
-                            <span className="in-cart-pill">
-                              <Check size={11} strokeWidth={3}/>
-                              {quantity(inCartQty*1000)} in bill
-                            </span>
-                          </div>
-                        )}
-                        <strong>{money(p.price)} <span style={{fontWeight:400,color:"#9da1a7",fontSize:10}}>/ {p.unit}</span></strong>
-                      </div>
-                      <div className={`product-plus ${inCartQty>0?"plus-green":""}`}>
-                        {p.stock_milli<=0?<PackageX size={15}/>:<Plus size={17}/>}
                       </div>
                     </button>
                   );
@@ -322,9 +258,20 @@ export default function Pos(){
         {/* Right Current Bill Panel (Sticky with internal scroll) */}
         <div className="card card-pad cart-panel">
           <div className="card-titlebar" style={{marginBottom:10,flexShrink:0}}>
-            <div>
-              <h2 className="section-title">Current bill</h2>
-              <p className="hint" style={{margin:"2px 0 0"}}>Live customer checkout</p>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              {/* Cart icon with bubble count */}
+              <div className="cart-icon-wrap">
+                <ShoppingCart size={19} strokeWidth={2.2}/>
+                {cart.length>0&&(
+                  <span className="cart-bubble">
+                    {cart.reduce((sum,x)=>sum+x.qty,0)}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h2 className="section-title">Current bill</h2>
+                <p className="hint" style={{margin:"2px 0 0"}}>Live customer checkout</p>
+              </div>
             </div>
             <div style={{display:"flex",gap:7,alignItems:"center"}}>
               {cart.length>0&&(
@@ -338,82 +285,87 @@ export default function Pos(){
                   <RotateCcw size={12}/> Reset
                 </button>
               )}
-              <span className="badge">{cart.length} items</span>
             </div>
           </div>
 
-          {/* Scrollable list of items in bill */}
+          {/* Scrollable list of items in bill - sleek, compact, prominent */}
           <div className="cart-items">
             {cart.length?cart.map(x=>(
-              <div className="cart-item" key={x.product.id}>
-                <div>
-                  <strong>{x.product.name}</strong>
-                  <small>{x.product.code} · {money(x.product.price)} / {x.product.unit}</small>
-                  <div className="cart-qty">
-                    <button className="qty-btn" aria-label="Decrease quantity" onClick={()=>updateQty(x.product.id,x.qty-1)}>
-                      <Minus size={12}/>
-                    </button>
-                    <input
-                      className="qty-input"
-                      inputMode="decimal"
-                      type="number"
-                      min="0.001"
-                      step="0.001"
-                      value={x.qty}
-                      onChange={e=>updateQty(x.product.id,Number(e.target.value))}
-                    />
-                    <button className="qty-btn" aria-label="Increase quantity" onClick={()=>updateQty(x.product.id,x.qty+1)}>
-                      <Plus size={12}/>
-                    </button>
-                    <button
-                      className="qty-btn"
-                      aria-label="Remove item"
-                      style={{marginLeft:7,color:"#ca343a"}}
-                      onClick={()=>setCart(c=>c.filter(z=>z.product.id!==x.product.id))}
-                    >
-                      <Trash2 size={12}/>
-                    </button>
+              <div className="cart-item-row" key={x.product.id}>
+                <div className="cart-item-info">
+                  <div className="cart-item-head">
+                    <span className="cart-item-name" title={x.product.name}>{x.product.name}</span>
+                    <strong className="cart-item-total">{money(Math.round(x.product.price*x.qty))}</strong>
+                  </div>
+                  <div className="cart-item-meta">
+                    <span className="cart-item-sub">{x.product.code} · {money(x.product.price)}/{x.product.unit}</span>
+                    <div className="cart-qty">
+                      <button className="qty-btn" aria-label="Decrease quantity" onClick={()=>updateQty(x.product.id,x.qty-1)}>
+                        <Minus size={11}/>
+                      </button>
+                      <input
+                        className="qty-input"
+                        inputMode="decimal"
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        value={x.qty}
+                        onChange={e=>updateQty(x.product.id,Number(e.target.value))}
+                      />
+                      <button className="qty-btn" aria-label="Increase quantity" onClick={()=>updateQty(x.product.id,x.qty+1)}>
+                        <Plus size={11}/>
+                      </button>
+                      <button
+                        className="qty-btn qty-trash"
+                        aria-label="Remove item"
+                        onClick={()=>setCart(c=>c.filter(z=>z.product.id!==x.product.id))}
+                        title="Remove item"
+                      >
+                        <Trash2 size={11}/>
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <strong style={{fontSize:12}}>{money(Math.round(x.product.price*x.qty))}</strong>
               </div>
             )):(
-              <Empty>
-                <ShoppingCart size={24}/>
-                <div>Your bill is empty.</div>
-                <div style={{marginTop:4}}>Select products from the catalog.</div>
-              </Empty>
+              <div className="empty-cart-state">
+                <ShoppingCart size={28} strokeWidth={1.5}/>
+                <p>No products in bill</p>
+                <small>Tap items on the left to add them.</small>
+              </div>
             )}
           </div>
 
-          {/* Sticky/Pinned Checkout Footer */}
+          {/* Sticky/Pinned Checkout Footer - Compact and efficient */}
           <div className="cart-footer">
-            <div className="divider" style={{margin:"12px 0 10px"}}/>
+            <div className="divider" style={{margin:"8px 0"}}/>
             <div className="cart-summary">
               <div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
               <div style={{alignItems:"center"}}>
-                <span>Discount (amount)</span>
+                <span>Discount</span>
                 <input
                   className="input"
-                  style={{width:105,textAlign:"right",minHeight:34,padding:"4px 8px",fontSize:12}}
+                  style={{width:95,textAlign:"right",minHeight:30,padding:"3px 8px",fontSize:12}}
                   type="number"
                   min="0"
                   step="0.01"
                   value={discount}
                   onChange={e=>setDiscount(e.target.value)}
+                  placeholder="0.00"
                 />
               </div>
             </div>
 
-            <div className="cart-total" style={{margin:"12px 0 10px",padding:"14px 16px"}}>
+            <div className="cart-total-bar">
               <div>
-                <small style={{fontSize:10}}>AMOUNT TO PAY</small>
-                <div style={{fontSize:10,color:"#aeb0b8",marginTop:2}}>All items included</div>
+                <small style={{fontSize:9.5,letterSpacing:0.8}}>TOTAL TO PAY</small>
               </div>
-              <strong style={{fontSize:22}}>{money(total)}</strong>
+              <strong>{money(total)}</strong>
             </div>
 
-            <div className="section-heading" style={{marginBottom:8,fontSize:11}}>Payment method</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <span className="section-heading" style={{margin:0,fontSize:10.5}}>Payment method</span>
+            </div>
             <div className="payment-types">
               {[
                 {value:"cash",icon:Banknote,label:"Cash"},
@@ -424,19 +376,20 @@ export default function Pos(){
                   key={p.value}
                   className={`pay-option ${method===p.value?"selected":""}`}
                   onClick={()=>setMethod(p.value)}
-                  style={{padding:"8px 6px"}}
+                  style={{padding:"6px 4px",minHeight:32,fontSize:11}}
                 >
-                  <p.icon size={15}/>{p.label}
+                  <p.icon size={13}/>{p.label}
                 </button>
               ))}
             </div>
 
             {method==="cash"&&(
-              <div style={{marginTop:10}}>
-                <Field label="CASH RECEIVED">
+              <div className="cash-tender-row">
+                <div style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
+                  <span style={{fontSize:10.5,fontWeight:700,whiteSpace:"nowrap",color:"#4d515a"}}>Cash:</span>
                   <input
                     className="input"
-                    style={{minHeight:36,padding:"6px 10px",fontSize:12}}
+                    style={{minHeight:30,padding:"4px 8px",fontSize:12,flex:1}}
                     type="number"
                     min="0"
                     step="0.01"
@@ -444,18 +397,18 @@ export default function Pos(){
                     value={tender}
                     onChange={e=>setTender(e.target.value)}
                   />
-                </Field>
-                <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11}}>
-                  <span style={{color:"#8a8f99"}}>Change to return</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",fontSize:11}}>
+                  <span style={{color:"#8a8f99",fontSize:10.5}}>Change:</span>
                   <strong style={{color:change>=0?"#168262":"#d13b40",fontSize:12}}>{money(Math.max(0,change))}</strong>
                 </div>
               </div>
             )}
 
-            <div style={{marginTop:12}}>
-              <Button className="btn-full" onClick={checkout} disabled={busy||!cart.length}>
-                {busy?"Processing sale...":"Complete sale & create bill"}
-                <ReceiptText size={16}/>
+            <div style={{marginTop:8}}>
+              <Button className="btn-full" onClick={checkout} disabled={busy||!cart.length} style={{minHeight:38,fontSize:12}}>
+                {busy?"Processing...":"Complete sale & bill"}
+                <ReceiptText size={15}/>
               </Button>
             </div>
           </div>
