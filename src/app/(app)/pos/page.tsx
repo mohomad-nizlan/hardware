@@ -17,6 +17,7 @@ export default function Pos(){
   const [method,setMethod]=useState("cash"),[discount,setDiscount]=useState("0"),[tender,setTender]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState<{id:string;invoiceNo:string}|null>(null);
   const [selectedCat,setSelectedCat]=useState("All");
   const scanInput=useRef<HTMLInputElement>(null);
+  const cartItemsRef=useRef<HTMLDivElement>(null);
 
   useEffect(()=>{
     const timer=setTimeout(()=>{
@@ -73,10 +74,15 @@ export default function Pos(){
     setCart(old=>{
       const found=old.find(x=>x.product.id===p.id);
       if(found)return old.map(x=>x.product.id===p.id?{...x,qty:Math.min(p.stock_milli/1000,Math.round((x.qty+1)*1000)/1000)}:x);
-      return [...old,{product:p,qty:1>p.stock_milli/1000?p.stock_milli/1000:1}];
+      return [{product:p,qty:1>p.stock_milli/1000?p.stock_milli/1000:1},...old];
     });
     setQuery("");
     scanInput.current?.focus();
+    setTimeout(()=>{
+      if(cartItemsRef.current){
+        cartItemsRef.current.scrollTop=0;
+      }
+    },50);
   };
 
   const updateQty=(id:string,n:number)=>{
@@ -289,7 +295,7 @@ export default function Pos(){
           </div>
 
           {/* Scrollable list of items in bill - sleek, compact, prominent */}
-          <div className="cart-items">
+          <div className="cart-items" ref={cartItemsRef}>
             {cart.length?cart.map(x=>(
               <div className="cart-item-row" key={x.product.id}>
                 <div className="cart-item-info">
