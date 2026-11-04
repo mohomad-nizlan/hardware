@@ -18,6 +18,7 @@ export default function Pos(){
   const [method,setMethod]=useState("cash"),[discount,setDiscount]=useState("0"),[tender,setTender]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState<{id:string;invoiceNo:string}|null>(null);
   const [selectedCat,setSelectedCat]=useState("All");
   const [expandedItems,setExpandedItems]=useState(false);
+  const [billOpen,setBillOpen]=useState(false);
   const scanInput=useRef<HTMLInputElement>(null);
   const cartItemsRef=useRef<HTMLDivElement>(null);
 
@@ -98,6 +99,7 @@ export default function Pos(){
     setTender("");
     setError("");
     setExpandedItems(false);
+    setBillOpen(false);
     scanInput.current?.focus();
   };
 
@@ -156,7 +158,7 @@ export default function Pos(){
 
       <div className="pos-layout">
         {/* Left Catalog Panel */}
-        <div className="card card-pad pos-catalog">
+        <div className={`card card-pad pos-catalog${billOpen?" bill-drawer-open":""}`}>
           <div className="pos-catalog-header">
             <div className="card-titlebar" style={{marginBottom:12}}>
               <div>
@@ -266,8 +268,32 @@ export default function Pos(){
           </div>
         </div>
 
-        {/* Right Current Bill Panel (Sticky with internal scroll) */}
-        <div className="card card-pad cart-panel">
+        {/* Right Current Bill Panel — right drawer on tablet */}
+        {/* Overlay backdrop (tablet only) */}
+        <div
+          className={`bill-overlay${billOpen?" bill-overlay-show":""}`}
+          onClick={()=>setBillOpen(false)}
+          aria-hidden="true"
+        />
+        <div className={`card card-pad cart-panel${billOpen?" cart-panel-open":""}`}>
+          {/* Vertical tab handle — only visible on tablet, sticks out on the left */}
+          <button
+            type="button"
+            className="bill-drawer-tab"
+            onClick={()=>setBillOpen(o=>!o)}
+            aria-label={billOpen?"Close bill":"Open bill"}
+            title={billOpen?"Close current bill":"View current bill"}
+          >
+            <div className="bill-drawer-tab-inner">
+              <div style={{position:"relative"}}>
+                <ShoppingCart size={17} strokeWidth={2.2}/>
+                {cart.length>0&&(
+                  <span className="cart-bubble bill-tab-bubble">{cart.length}</span>
+                )}
+              </div>
+              <span className="bill-drawer-label">{billOpen?"Close":"Bill"}</span>
+            </div>
+          </button>
           <div className="card-titlebar" style={{marginBottom:10,flexShrink:0}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               {/* Cart icon with distinct product count badge */}
