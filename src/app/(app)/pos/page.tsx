@@ -144,9 +144,11 @@ export default function Pos(){
 
   return (
     <>
-      <Heading kicker="FAST CHECKOUT" title="POS terminal" description="Scan a product code or tap to add items. Live stock and bill update instantly.">
-        <span className="badge"><Keyboard size={11} style={{verticalAlign:"middle"}}/> F2 to scan</span>
-      </Heading>
+      <div className="pos-heading-wrap">
+        <Heading kicker="FAST CHECKOUT" title="POS terminal" description="Scan a product code or tap to add items. Live stock and bill update instantly.">
+          <span className="badge"><Keyboard size={11} style={{verticalAlign:"middle"}}/> F2 to scan</span>
+        </Heading>
+      </div>
       <Message text={error} error/>
 
       <div className="pos-layout">
