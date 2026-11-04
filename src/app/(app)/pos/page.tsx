@@ -79,8 +79,12 @@ export default function Pos(){
       if(found)return old.map(x=>x.product.id===p.id?{...x,qty:Math.min(p.stock_milli/1000,Math.round((x.qty+1)*1000)/1000)}:x);
       return [{product:p,qty:1>p.stock_milli/1000?p.stock_milli/1000:1},...old];
     });
-    setQuery("");
-    scanInput.current?.focus();
+    // Don't refocus search on tablet — it triggers keyboard/hover on the input
+    const isTablet=window.innerWidth<=1024;
+    if(!isTablet){
+      setQuery("");
+      scanInput.current?.focus();
+    }
     setTimeout(()=>{
       if(cartItemsRef.current){
         cartItemsRef.current.scrollTop=0;
@@ -160,40 +164,38 @@ export default function Pos(){
         {/* Left Catalog Panel */}
         <div className={`card card-pad pos-catalog${billOpen?" bill-drawer-open":""}`}>
           <div className="pos-catalog-header">
-            <div className="card-titlebar" style={{marginBottom:12}}>
-              <div>
-                <h2 className="section-title">Product catalog</h2>
-                <p className="hint" style={{margin:"3px 0 0"}}>Select an item to add to the current bill.</p>
+            {/* Compact top bar: title + badge + search all in one row */}
+            <div className="catalog-topbar">
+              <div className="catalog-title-group">
+                <h2 className="section-title" style={{fontSize:13,margin:0}}>Product Catalog</h2>
+                <span className="badge" style={{fontSize:9,padding:"2px 7px"}}>{filteredProducts.length} items</span>
               </div>
-              <span className="badge">{filteredProducts.length} items</span>
+              {/* Search Input - compact inline */}
+              <div className="search-wrap catalog-search">
+                <ScanBarcode size={15}/>
+                <input
+                  ref={scanInput}
+                  className="input search-input"
+                  autoFocus
+                  placeholder="Scan / search…"
+                  value={query}
+                  onChange={e=>setQuery(e.target.value)}
+                  onKeyDown={handleScan}
+                />
+                {query&&(
+                  <button
+                    type="button"
+                    onClick={()=>{setQuery("");scanInput.current?.focus()}}
+                    style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",border:0,background:"none",color:"#8f94a0",cursor:"pointer",display:"flex"}}
+                    title="Clear search"
+                  >
+                    <X size={14}/>
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Search Input */}
-            <div className="search-wrap">
-              <ScanBarcode size={19}/>
-              <input
-                ref={scanInput}
-                className="input search-input"
-                style={{height:46}}
-                autoFocus
-                placeholder="Scan barcode, type code or search item name..."
-                value={query}
-                onChange={e=>setQuery(e.target.value)}
-                onKeyDown={handleScan}
-              />
-              {query&&(
-                <button
-                  type="button"
-                  onClick={()=>{setQuery("");scanInput.current?.focus()}}
-                  style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",border:0,background:"none",color:"#8f94a0",cursor:"pointer"}}
-                  title="Clear search"
-                >
-                  <X size={16}/>
-                </button>
-              )}
-            </div>
-
-            {/* Category Filter Pills */}
+            {/* Category Filter Pills - single scrollable row */}
             {categories.length>2&&(
               <div className="category-filter-bar">
                 {categories.map(c=>(
@@ -275,25 +277,25 @@ export default function Pos(){
           onClick={()=>setBillOpen(false)}
           aria-hidden="true"
         />
-        <div className={`card card-pad cart-panel${billOpen?" cart-panel-open":""}`}>
-          {/* Vertical tab handle — only visible on tablet, sticks out on the left */}
-          <button
-            type="button"
-            className="bill-drawer-tab"
-            onClick={()=>setBillOpen(o=>!o)}
-            aria-label={billOpen?"Close bill":"Open bill"}
-            title={billOpen?"Close current bill":"View current bill"}
-          >
-            <div className="bill-drawer-tab-inner">
-              <div style={{position:"relative"}}>
-                <ShoppingCart size={17} strokeWidth={2.2}/>
-                {cart.length>0&&(
-                  <span className="cart-bubble bill-tab-bubble">{cart.length}</span>
-                )}
-              </div>
-              <span className="bill-drawer-label">{billOpen?"Close":"Bill"}</span>
+        {/* Drawer tab — FIXED sibling so it's never clipped by cart-panel overflow:hidden */}
+        <button
+          type="button"
+          className={`bill-drawer-tab${billOpen?" bill-drawer-tab-open":""}`}
+          onClick={()=>setBillOpen(o=>!o)}
+          aria-label={billOpen?"Close bill":"Open bill"}
+          title={billOpen?"Close current bill":"View current bill"}
+        >
+          <div className="bill-drawer-tab-inner">
+            <div style={{position:"relative"}}>
+              <ShoppingCart size={17} strokeWidth={2.2}/>
+              {cart.length>0&&(
+                <span className="cart-bubble bill-tab-bubble">{cart.length}</span>
+              )}
             </div>
-          </button>
+            <span className="bill-drawer-label">{billOpen?"✕":"Bill"}</span>
+          </div>
+        </button>
+        <div className={`card card-pad cart-panel${billOpen?" cart-panel-open":""}`}>
           <div className="card-titlebar" style={{marginBottom:10,flexShrink:0}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               {/* Cart icon with distinct product count badge */}
