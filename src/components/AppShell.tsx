@@ -143,7 +143,6 @@ export default function AppShell({user,children}:{user:AuthUser;children:ReactNo
             </div>
           </div>
           <div className="topbar-right">
-            <span className="badge good" style={{fontSize:10}}>● System online</span>
             <div className="user-meta"><strong>{user.display_name}</strong><small>{user.role}</small></div>
           </div>
         </header>
