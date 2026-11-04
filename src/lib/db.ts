@@ -3,9 +3,11 @@ import { createClient, type InStatement } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/lib/schema";
 
-const defaultUrl = process.env.VERCEL ? "file:/tmp/local.db" : "file:local.db";
+const defaultUrl = "libsql://hardware-prophetic-libra-tnygvo.aws-ap-south-1.turso.io";
+const defaultToken = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTM3NjAxNzAsImlkIjoiMDFhMWE0NmYtNGYwMS03MzllLTliNmQtNDM3OWU5YmFkMjRmIiwia2lkIjoiaU11NVgxcWJobWxxR0lGZC1KMG14QlM3bkhwdk5qSi0wN09Vd01GVkpMSSIsInJpZCI6IjE3NGU1ZTVlLTcxZGQtNDQ4OC04Y2M0LTI1YjJiMTUyMTUzYiJ9.7mezQShZ6mwrOS9NGc5XXOPmHT3AT0JDS0mckrstIPY9XmOxpEBe0oZRk3qRMPgoLLkpSHCVvffAPTfe4kBQCw";
+
 const url = process.env.TURSO_DATABASE_URL || defaultUrl;
-const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
+const authToken = process.env.TURSO_AUTH_TOKEN || defaultToken;
 
 const rawClient = createClient({ url, authToken });
 export const db = drizzle(rawClient, { schema });
