@@ -337,6 +337,16 @@ export default function Pos(){
                   <RotateCcw size={12}/> Reset
                 </button>
               )}
+              <button
+                type="button"
+                className="btn btn-small btn-outline bill-close-btn"
+                style={{padding:"4px 8px",fontSize:11,minHeight:28}}
+                onClick={()=>setBillOpen(false)}
+                title="Close bill"
+                aria-label="Close bill drawer"
+              >
+                <X size={14}/>
+              </button>
             </div>
           </div>
 
