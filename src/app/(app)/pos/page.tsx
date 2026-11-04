@@ -164,12 +164,29 @@ export default function Pos(){
         {/* Left Catalog Panel */}
         <div className={`card card-pad pos-catalog${billOpen?" bill-drawer-open":""}`}>
           <div className="pos-catalog-header">
-            {/* Compact top bar: title + badge + search all in one row */}
+            {/* Compact top bar: title + badge + category dropdown + search */}
             <div className="catalog-topbar">
               <div className="catalog-title-group">
-                <h2 className="section-title" style={{fontSize:13,margin:0}}>Product Catalog</h2>
+                <h2 className="section-title" style={{fontSize:13,margin:0,whiteSpace:"nowrap"}}>Catalog</h2>
                 <span className="badge" style={{fontSize:9,padding:"2px 7px"}}>{filteredProducts.length} items</span>
               </div>
+
+              {/* Category Dropdown */}
+              <div className="category-select-wrap">
+                <select
+                  className="category-select"
+                  value={selectedCat}
+                  onChange={e=>setSelectedCat(e.target.value)}
+                  aria-label="Filter products by category"
+                >
+                  {categories.map(c=>(
+                    <option key={c} value={c}>
+                      {c==="All"?"All Categories":c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Search Input - compact inline */}
               <div className="search-wrap catalog-search">
                 <ScanBarcode size={15}/>
@@ -177,7 +194,7 @@ export default function Pos(){
                   ref={scanInput}
                   className="input search-input"
                   autoFocus
-                  placeholder="Scan / search…"
+                  placeholder="Scan barcode or search…"
                   value={query}
                   onChange={e=>setQuery(e.target.value)}
                   onKeyDown={handleScan}
@@ -194,22 +211,6 @@ export default function Pos(){
                 )}
               </div>
             </div>
-
-            {/* Category Filter Pills - single scrollable row */}
-            {categories.length>2&&(
-              <div className="category-filter-bar">
-                {categories.map(c=>(
-                  <button
-                    key={c}
-                    type="button"
-                    className={`cat-pill ${selectedCat===c?"active":""}`}
-                    onClick={()=>setSelectedCat(c)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Scrollable Product Area - always row view */}
@@ -395,12 +396,12 @@ export default function Pos(){
               onClick={()=>setExpandedItems(!expandedItems)}
               aria-label={expandedItems?"Collapse item list":"Expand to see all added products"}
             >
-              <span>{expandedItems?"▴ Collapse list / Show payment controls":`▾ View all ${cart.length} products added (Expand)`}</span>
+              <span>{expandedItems?"▴ Collapse / Show payment controls":`▾ View all ${cart.length} items`}</span>
             </button>
           )}
 
-          {/* Sticky/Pinned Checkout Footer - Compact and efficient */}
-          <div className="cart-footer">
+          {/* Sticky/Pinned Checkout Footer - hidden when expanded so full item list shows */}
+          <div className="cart-footer" style={expandedItems?{display:"none"}:undefined}>
             <div className="divider" style={{margin:"8px 0"}}/>
             <div className="cart-summary">
               <div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
